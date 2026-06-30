@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage
 from agent import jalankan_agen_reservasi
-from scheduler import lihat_jadwal_lab, cek_slot_kosong
+from scheduler import lihat_jadwal_lab, cek_slot_kosong, format_tanggal
 
 app = FastAPI(title="SABRELab API")
 
