@@ -8,7 +8,10 @@ export default function Sidebar({ activeTab, setActiveTab }) {
 
   useEffect(() => {
     fetch('http://localhost:8000/api/labs')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
       .then((data) => {
         setLabs(data.map((d) => ({
           id: d.id,
@@ -16,8 +19,8 @@ export default function Sidebar({ activeTab, setActiveTab }) {
           status: d.status
         })));
       })
-      .catch(() => {
-        // fallback jika backend tidak jalan
+      .catch((err) => {
+        console.error('Gagal fetch labs:', err);
       });
   }, []);
 

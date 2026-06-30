@@ -7,12 +7,17 @@ export default function LabDashboard({ labName }) {
   useEffect(() => {
     setLoading(true);
     fetch(`http://localhost:8000/api/lab/${encodeURIComponent(labName)}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
       .then((json) => {
         setData(json);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('Gagal fetch lab:', err);
+        setData(null);
         setLoading(false);
       });
   }, [labName]);
