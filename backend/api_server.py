@@ -1,7 +1,12 @@
+import os
 import uuid
+import threading
 from datetime import datetime
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage
 from agent import jalankan_agen_reservasi
@@ -9,12 +14,30 @@ from scheduler import lihat_jadwal_lab, cek_slot_kosong, format_tanggal
 
 app = FastAPI(title="SABRELab API")
 
+# --- Rate Limiter ---
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# --- CORS ---
+cors_origins = os.getenv("CORS_ORIGINS", "*")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins.split(",") if cors_origins != "*" else ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- Auth ---
+API_AUTH_TOKEN = os.getenv("API_AUTH_TOKEN")
+
+def verify_token(authorization: str = Header(None)):
+    if not API_AUTH_TOKEN:
+        return
+    if not authorization or authorization != f"Bearer {API_AUTH_TOKEN}":
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+RATE_LIMIT = os.getenv("RATE_LIMIT", "30/minute")
 
 sessions = {}
 
@@ -27,7 +50,10 @@ class ChatResponse(BaseModel):
     session_id: str
 
 @app.post("/api/chat")
-async def chat(req: ChatRequest):
+@limiter.limit(RATE_LIMIT)
+async def chat(request: Request, req: ChatRequest, authorization: str = Header(None)):
+    verify_token(authorization)
+
     if not req.session_id or req.session_id not in sessions:
         session_id = str(uuid.uuid4())
         sessions[session_id] = []
@@ -48,7 +74,10 @@ async def chat(req: ChatRequest):
     return ChatResponse(reply=reply, session_id=session_id)
 
 @app.get("/api/lab/{lab_name}")
-async def lab_detail(lab_name: str, tanggal: str | None = Query(None)):
+@limiter.limit(RATE_LIMIT)
+async def lab_detail(request: Request, lab_name: str, tanggal: str | None = Query(None), authorization: str = Header(None)):
+    verify_token(authorization)
+
     if not tanggal:
         tanggal = datetime.now().strftime("%Y-%m-%d")
 
@@ -74,7 +103,9 @@ async def lab_detail(lab_name: str, tanggal: str | None = Query(None)):
     }
 
 @app.get("/api/labs")
-async def daftar_lab():
+@limiter.limit(RATE_LIMIT)
+async def daftar_lab(request: Request, authorization: str = Header(None)):
+    verify_token(authorization)
     """Mengembalikan daftar lab dan statusnya hari ini."""
     labs = ["Lab Komputer 1", "Lab Komputer 2"]
     tanggal = datetime.now().strftime("%Y-%m-%d")
@@ -87,6 +118,16 @@ async def daftar_lab():
             "status": "Tersedia" if not bookings else ("Penuh" if not tersedia else "Terbooking")
         })
     return hasil
+
+@app.on_event("startup")
+def startup():
+    try:
+        from telegram_bot import start_bot
+        t = threading.Thread(target=start_bot, daemon=True)
+        t.start()
+        print("✅ Telegram Bot thread started")
+    except Exception as e:
+        print(f"⚠️ Gagal start Telegram Bot: {e}")
 
 if __name__ == "__main__":
     import uvicorn

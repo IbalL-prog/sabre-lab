@@ -61,19 +61,37 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if update.message:
             await update.message.reply_text(f"Maaf, terjadi kesalahan: {e}")
 
-def main():
-    """Menjalankan bot Telegram."""
-    print("🚀 Bot backend sedang berjalan... Tekan Ctrl+C untuk mematikan.")
-    
-    # Membangun aplikasi bot
+def start_bot():
+    """Menjalankan bot Telegram (bisa dipanggil dari thread terpisah)."""
+    if not TELEGRAM_TOKEN:
+        print("⚠️ TELEGRAM_TOKEN tidak diatur. Bot Telegram tidak diaktifkan.")
+        return
+
+    import asyncio
+    asyncio.run(_run_bot())
+
+async def _run_bot():
+    """Async internal runner untuk bot Telegram."""
+    print("🚀 Bot Telegram sedang berjalan...")
     application = Application.builder().token(TELEGRAM_TOKEN).build()
-    
-    # Mendaftarkan perintah /start dan pesan teks biasa
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    
-    # Mulai mendengarkan chat masuk (metode Polling, tidak butuh Ngrok)
-    application.run_polling()
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling()
+    # Keep running
+    try:
+        while True:
+            await asyncio.sleep(3600)
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        pass
+    finally:
+        await application.updater.stop()
+        await application.stop()
+        await application.shutdown()
+
+def main():
+    start_bot()
 
 if __name__ == '__main__':
     main()

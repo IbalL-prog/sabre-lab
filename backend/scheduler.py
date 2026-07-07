@@ -1,10 +1,15 @@
 # Simpan di VS Code dengan nama: scheduler.py
+import os
 import sqlite3
 from datetime import datetime, timedelta
 
+
+def get_db_path():
+    return os.getenv("DATABASE_PATH", "lab_reservation.db")
+
 def inisialisasi_db():
     """Membuat database lokal dan tabel jika belum ada, serta mengisi data simulasi."""
-    conn = sqlite3.connect("lab_reservation.db")
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     # Buat tabel transaksi reservasi
@@ -51,7 +56,7 @@ def format_tanggal(tgl_str):
 
 def cek_slot_kosong(id_lab, tanggal):
     """Mengembalikan daftar slot waktu yang tersedia untuk lab dan tanggal tertentu."""
-    conn = sqlite3.connect("lab_reservation.db")
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     cursor.execute(
         "SELECT jam_mulai, jam_selesai FROM reservations WHERE LOWER(id_lab) = LOWER(?) AND tanggal = ?",
@@ -79,7 +84,7 @@ def cek_bentrok_dan_rekomendasi(nim_nidn, id_lab, tanggal, jam_mulai, durasi, na
     Jika terjadi bentrok, sistem menscan slot waktu kosong pada jam kerja (08:00 - 17:00).
     """
     jam_selesai = hitung_jam_selesai(jam_mulai, durasi)
-    conn = sqlite3.connect("lab_reservation.db")
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     
     # Query mengambil semua jadwal aktif di lab & tanggal yang sama
@@ -133,7 +138,7 @@ def cek_bentrok_dan_rekomendasi(nim_nidn, id_lab, tanggal, jam_mulai, durasi, na
 
 def cari_booking(nim_nidn, id_lab, tanggal):
     """Mencari booking berdasarkan NIM/NIDN, lab, dan tanggal."""
-    conn = sqlite3.connect("lab_reservation.db")
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     cursor.execute(
         """SELECT id, nim_nidn, id_lab, tanggal, jam_mulai, jam_selesai, nama_kegiatan
@@ -147,7 +152,7 @@ def cari_booking(nim_nidn, id_lab, tanggal):
 
 def batalkan_reservasi(booking_id):
     """Menghapus booking berdasarkan ID."""
-    conn = sqlite3.connect("lab_reservation.db")
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     cursor.execute("DELETE FROM reservations WHERE id=?", (booking_id,))
     conn.commit()
@@ -155,7 +160,7 @@ def batalkan_reservasi(booking_id):
 
 def lihat_jadwal_lab(id_lab, tanggal):
     """Mengembalikan daftar booking (NIM, jam, kegiatan) untuk lab & tanggal tertentu."""
-    conn = sqlite3.connect("lab_reservation.db")
+    conn = sqlite3.connect(get_db_path())
     cursor = conn.cursor()
     cursor.execute(
         """SELECT nim_nidn, jam_mulai, jam_selesai, nama_kegiatan
