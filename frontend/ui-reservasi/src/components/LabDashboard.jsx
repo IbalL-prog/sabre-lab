@@ -6,7 +6,11 @@ export default function LabDashboard({ labName }) {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:8000/api/lab/${encodeURIComponent(labName)}`)
+    const headers = {};
+    if (import.meta.env.VITE_API_TOKEN) {
+      headers['Authorization'] = `Bearer ${import.meta.env.VITE_API_TOKEN}`;
+    }
+    fetch(`/api/lab/${encodeURIComponent(labName)}`, { headers })
       .then((res) => {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();

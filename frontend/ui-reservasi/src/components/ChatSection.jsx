@@ -25,9 +25,13 @@ export default function ChatSection() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/api/chat', {
+      const headers = { 'Content-Type': 'application/json' };
+      if (import.meta.env.VITE_API_TOKEN) {
+        headers['Authorization'] = `Bearer ${import.meta.env.VITE_API_TOKEN}`;
+      }
+      const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ message: userMessage, session_id: sessionId.current })
       });
       const data = await response.json();

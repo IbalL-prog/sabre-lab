@@ -7,7 +7,11 @@ export default function Sidebar({ activeTab, setActiveTab }) {
   ]);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/labs')
+    const headers = {};
+    if (import.meta.env.VITE_API_TOKEN) {
+      headers['Authorization'] = `Bearer ${import.meta.env.VITE_API_TOKEN}`;
+    }
+    fetch('/api/labs', { headers })
       .then((res) => {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();
