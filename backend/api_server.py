@@ -4,13 +4,14 @@ import threading
 from datetime import datetime
 from fastapi import FastAPI, Query, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
+from slowapi import Limiter # pyright: ignore[reportMissingImports]
+from slowapi.extension import _rate_limit_exceeded_handler # pyright: ignore[reportMissingImports]
+from slowapi.util import get_remote_address # pyright: ignore[reportMissingImports]
+from slowapi.errors import RateLimitExceeded # pyright: ignore[reportMissingImports]
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage
 from agent import jalankan_agen_reservasi
-from scheduler import lihat_jadwal_lab, cek_slot_kosong, format_tanggal
+from scheduler import inisialisasi_db, lihat_jadwal_lab, cek_slot_kosong, format_tanggal
 
 app = FastAPI(title="SABRELab API")
 
@@ -121,6 +122,12 @@ async def daftar_lab(request: Request, authorization: str = Header(None)):
 
 @app.on_event("startup")
 def startup():
+    try:
+        inisialisasi_db()
+        print("✅ Database initialized")
+    except Exception as e:
+        print(f"⚠️ Gagal inisialisasi DB: {e}")
+
     try:
         from telegram_bot import start_bot
         t = threading.Thread(target=start_bot, daemon=True)

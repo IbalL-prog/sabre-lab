@@ -108,8 +108,12 @@ def coba_parse_json_dan_reservasi(konten):
         pass
     return None
 
-def jalankan_agen_reservasi(teks_user, riwayat_chat=[]):
+def jalankan_agen_reservasi(teks_user, riwayat_chat=None):
+    if riwayat_chat is None:
+        riwayat_chat = []
     """Memproses pesan masuk dari antarmuka chat, mengekstrak JSON, dan memvalidasi logistik."""
+    if not os.getenv("GROQ_API_KEY"):
+        return "⚠️ GROQ_API_KEY belum diatur. Hubungi admin."
     response = None
     teks_lower = teks_user.lower()
     tanggal_sekarang = datetime.now().strftime("%Y-%m-%d")
@@ -149,7 +153,7 @@ def jalankan_agen_reservasi(teks_user, riwayat_chat=[]):
                     f"{b[0]}. {b[2]} | {b[3]} | {b[4]}-{b[5]} | {b[6]}"
                     for b in bookings
                 )
-                return f"Ditemukan booking atas nama **{data['nim_nidn']}**:\n{daftar}\n\nYakin ingin dibatalkan? (iya/tidak)"
+                return f"Ditemukan booking atas nama {data['nim_nidn']}:\n{daftar}\n\nYakin ingin dibatalkan? (iya/tidak)"
 
             elif action == "eksekusi_batal":
                 bookings = cari_booking(data["nim_nidn"], data["id_lab"], data["tanggal"])
@@ -157,7 +161,7 @@ def jalankan_agen_reservasi(teks_user, riwayat_chat=[]):
                     return "Data booking tidak ditemukan."
                 for b in bookings:
                     batalkan_reservasi(b[0])
-                return f"✅ Booking **{data['id_lab']}** atas **{data['nim_nidn']}** pada **{format_tanggal(data['tanggal'])}** berhasil dibatalkan."
+                return f"✅ Booking {data['id_lab']} atas {data['nim_nidn']} pada {format_tanggal(data['tanggal'])} berhasil dibatalkan."
 
         if response:
             return response.content
@@ -179,7 +183,7 @@ def jalankan_agen_reservasi(teks_user, riwayat_chat=[]):
             bookings = lihat_jadwal_lab(id_lab, tgl)
             tgl_fmt = format_tanggal(tgl)
             if not bookings:
-                return f"Tidak ada booking di **{id_lab}** pada **{tgl_fmt}**."
+                return f"Tidak ada booking di {id_lab} pada {tgl_fmt}."
             daftar_terisi = "\n".join(
                 f"{i+1}. {b[1]}-{b[2]} | {b[0]} | {b[3]}"
                 for i, b in enumerate(bookings)
@@ -187,9 +191,9 @@ def jalankan_agen_reservasi(teks_user, riwayat_chat=[]):
             tersedia = cek_slot_kosong(id_lab, tgl)
             if tersedia:
                 slot_str = "\n".join(f"{i+1}. {s}" for i, s in enumerate(tersedia))
-                return f"📋 **Jadwal {id_lab} - {tgl_fmt}**\n\nTerisi:\n{daftar_terisi}\n\nSlot kosong:\n{slot_str}"
+                return f"📋 Jadwal {id_lab} - {tgl_fmt}\n\nTerisi:\n{daftar_terisi}\n\nSlot kosong:\n{slot_str}"
             else:
-                return f"📋 **Jadwal {id_lab} - {tgl_fmt}**\n\nTerisi:\n{daftar_terisi}\n\nMaaf, tidak ada slot kosong tersedia."
+                return f"📋 Jadwal {id_lab} - {tgl_fmt}\n\nTerisi:\n{daftar_terisi}\n\nMaaf, tidak ada slot kosong tersedia."
         if resp:
             return resp.content
 

@@ -1,4 +1,5 @@
 # Simpan di VS Code dengan nama: telegram_bot.py
+import asyncio
 import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes

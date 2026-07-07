@@ -111,7 +111,7 @@ def cek_bentrok_dan_rekomendasi(nim_nidn, id_lab, tanggal, jam_mulai, durasi, na
         conn.commit()
         conn.close()
         tgl_format = format_tanggal(tanggal)
-        return True, f"🎉 Selamat! Reservasi **{id_lab}** atas nama **{nim_nidn}** untuk kegiatan **{nama_kegiatan}** pada **{tgl_format}** pukul **{jam_mulai} - {jam_selesai}** telah berhasil."
+        return True, f"🎉 Selamat! Reservasi {id_lab} atas nama {nim_nidn} untuk kegiatan {nama_kegiatan} pada {tgl_format} pukul {jam_mulai} - {jam_selesai} telah berhasil."
 
     # 2. Solver CSP: Rekomendasikan slot alternatif jika terdeteksi konflik
     rekomendasi = []
@@ -133,8 +133,8 @@ def cek_bentrok_dan_rekomendasi(nim_nidn, id_lab, tanggal, jam_mulai, durasi, na
     tgl_format = format_tanggal(tanggal)
     opsi_str = "\n".join(f"{i+1}. {r}" for i, r in enumerate(rekomendasi[:3]))
     if opsi_str:
-        return False, f"⚠️ Maaf, jadwal **{id_lab}** pada **{tgl_format}** pukul **{jam_mulai} - {jam_selesai}** sudah terbooking.\n\nBerikut jam alternatif yang tersedia:\n{opsi_str}\n\nSilakan pilih salah satu slot di atas."
-    return False, f"❌ Maaf, jadwal **{id_lab}** pada **{tgl_format}** sudah penuh seharian. Silakan pilih tanggal lain."
+        return False, f"⚠️ Maaf, jadwal {id_lab} pada {tgl_format} pukul {jam_mulai} - {jam_selesai} sudah terbooking.\n\nBerikut jam alternatif yang tersedia:\n{opsi_str}\n\nSilakan pilih salah satu slot di atas."
+    return False, f"❌ Maaf, jadwal {id_lab} pada {tgl_format} sudah penuh seharian. Silakan pilih tanggal lain."
 
 def cari_booking(nim_nidn, id_lab, tanggal):
     """Mencari booking berdasarkan NIM/NIDN, lab, dan tanggal."""
@@ -173,5 +173,4 @@ def lihat_jadwal_lab(id_lab, tanggal):
     conn.close()
     return hasil
 
-# Jalankan inisialisasi database saat backend dinyalakan
-inisialisasi_db()
+
